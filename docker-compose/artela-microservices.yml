@@ -5,6 +5,8 @@ services:
     extends:
       file: ./services/visualizer.yml
       service: visualizer
+  ports:
+      - 8081:8050
 
   sig-provider:
     extends:
@@ -12,7 +14,6 @@ services:
       service: sig-provider
     ports:
       - 8083:8050
-
 
   sc-verifier:
     extends:
@@ -40,13 +41,5 @@ services:
     extends:
       file: ./services/stats.yml
       service: stats
-
-  proxy:
-    depends_on:
-      - visualizer
-      - stats
-    extends:
-      file: ./services/nginx.yml
-      service: proxy
-    volumes:
-      - "./proxy/microservices.conf.template:/etc/nginx/templates/default.conf.template"
+    ports:
+      - 8080:8050
