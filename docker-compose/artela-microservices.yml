@@ -5,7 +5,7 @@ services:
     extends:
       file: ./services/visualizer.yml
       service: visualizer
-  ports:
+    ports:
       - 8081:8050
 
   sig-provider:
