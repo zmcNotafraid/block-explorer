@@ -18,6 +18,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
   @api_true [api?: true]
+  @aspect_core_contract_address Chain.string_to_address_hash("0x0000000000000000000000000000000000a27e14") |> elem(1)
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
@@ -715,6 +716,35 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         [:coin_transfer | types]
       else
         types
+      end
+
+    tx_types(tx, types, :aspect_ops)
+  end
+
+  def tx_types(%Transaction{to_address_hash: to_address_hash, input: input} = tx, types, :aspect_ops) do
+    types =
+      case to_address_hash do
+        @aspect_core_contract_address ->
+          # Transaction.get_method_name(tx)
+          %{bytes: <<method_id::binary-size(4), _::binary>>} = input
+
+          type =
+            case Base.encode16(method_id, case: :lower) do
+              "e0e48314" <> _ -> :aspect_aspects_of
+              "3446f1d2" <> _ -> :aspect_bind
+              "a33bf5ad" <> _ -> :aspect_bound_addresses_of
+              "92dfbc49" <> _ -> :aspect_changeVersion
+              "ef00b7b0" <> _ -> :aspect_deploy
+              "995a75e8" <> _ -> :aspect_entrypoint
+              "4930308e" <> _ -> :aspect_unbind
+              "100a252e" <> _ -> :aspect_upgrade
+              "0db3ff45" <> _ -> :aspect_version_of
+              _ -> :aspect_operation
+            end
+
+          [type | types]
+        _ ->
+          types
       end
 
     tx_types(tx, types, :rootstock_remasc)
