@@ -15,7 +15,8 @@ defmodule Explorer.Chain.Import do
     Import.Stage.AddressesBlocksCoinBalances,
     Import.Stage.BlockReferencing,
     Import.Stage.BlockFollowing,
-    Import.Stage.BlockPending
+    Import.Stage.BlockPending,
+    Import.Stage.AspectReferencing
   ]
 
   # in order so that foreign keys are inserted before being referenced

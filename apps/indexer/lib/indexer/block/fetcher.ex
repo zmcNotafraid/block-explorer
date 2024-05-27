@@ -35,6 +35,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.{Prometheus, TokenBalances, Tracer}
 
   alias Indexer.Transform.{
+    Aspects,
     AddressCoinBalances,
     Addresses,
     AddressTokenBalances,
@@ -152,6 +153,12 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
+         %{
+           aspects: aspects,
+           aspect_versions: aspect_versions,
+           aspect_transactions: aspect_transactions,
+           aspect_bound_addresses: aspect_bound_addresses
+         } = Aspects.parse(transactions_params_without_receipts),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          optimism_withdrawals =
            if(callback_module == Indexer.Block.Realtime.Fetcher, do: OptimismWithdrawals.parse(logs), else: []),
@@ -186,7 +193,8 @@ defmodule Indexer.Block.Fetcher do
              transactions: transactions_with_receipts,
              transaction_actions: transaction_actions,
              withdrawals: withdrawals_params,
-             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations
+             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
+             aspect_bound_addresses: aspect_bound_addresses
            }),
          coin_balances_params_set =
            %{
@@ -212,6 +220,10 @@ defmodule Indexer.Block.Fetcher do
            address_current_token_balances: %{
              params: address_token_balances |> MapSet.to_list() |> TokenBalances.to_address_current_token_balances()
            },
+           aspects: %{params: aspects},
+           aspect_transactions: %{params: aspect_transactions},
+           aspect_versions: %{params: aspect_versions},
+           aspect_bound_addresses: %{params: aspect_bound_addresses},
            blocks: %{params: blocks},
            block_second_degree_relations: %{params: block_second_degree_relations_params},
            block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
