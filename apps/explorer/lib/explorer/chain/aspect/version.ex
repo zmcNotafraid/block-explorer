@@ -44,8 +44,8 @@ defmodule Explorer.Chain.Aspect.Version do
     timestamps()
   end
 
-  @required_fields ~w(aspect_hash aspect_transaction_hash version join_points aspect_transaction_index block_number)a
-  @optional_fields ~w(code proof properties settlement_address_hash)a
+  @required_fields ~w(aspect_hash aspect_transaction_hash aspect_transaction_index block_number)a
+  @optional_fields ~w(code proof properties settlement_address_hash version join_points)a
   @allowed_fields @required_fields ++ @optional_fields
 
   def changeset(%__MODULE__{} = struct, params \\ %{}) do

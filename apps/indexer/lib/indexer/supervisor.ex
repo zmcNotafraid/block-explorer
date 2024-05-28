@@ -46,6 +46,7 @@ defmodule Indexer.Supervisor do
     Withdrawal
   }
 
+  alias Indexer.Fetcher.Aspect.Version
   alias Indexer.Fetcher.ZkSync.BatchesStatusTracker, as: ZkSyncBatchesStatusTracker
   alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
 
@@ -139,6 +140,7 @@ defmodule Indexer.Supervisor do
         {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
+        {Version.Supervisor, [[memory_monitor: memory_monitor]]},
         {Indexer.Fetcher.RollupL1ReorgMonitor.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(
           Indexer.Fetcher.Optimism.TxnBatch.Supervisor,

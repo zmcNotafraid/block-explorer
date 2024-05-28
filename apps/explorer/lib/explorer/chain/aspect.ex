@@ -4,11 +4,13 @@ defmodule Explorer.Chain.Aspect do
   """
 
   use Explorer.Schema
+  import Explorer.Chain, only: [add_fetcher_limit: 2]
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
   alias Explorer.Chain.{Aspect, Data, Hash}
-  alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.{PagingOptions, Repo}
+  alias Explorer.Chain.Aspect.Version
 
   @constant "0x0000000000000000000000000000000000a27e14"
 
@@ -52,5 +54,35 @@ defmodule Explorer.Chain.Aspect do
 
   def find_by_hash(aspect_hash) do
     Aspect |> Repo.get_by(hash: aspect_hash)
+  end
+
+  def stream_unversioned_aspect_hashes(initial, reducer, limited? \\ false)
+      when is_function(reducer, 2) do
+    query =
+      from(
+        version1 in Version,
+        join: version2 in Version,
+        on: version2.aspect_hash == version1.aspect_hash,
+        where: version1.version == 1 and is_nil(version2.version),
+        select: version1.aspect_hash,
+        distinct: true
+      )
+
+    query
+    |> add_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
+  def stream_unbind_addresses(initial, reducer, limited? \\ false)
+      when is_function(reducer, 2) do
+    query =
+      from(
+        bound_address in BoundAddress,
+        where: is_nil(bound_address.bind_transaction_hash)
+      )
+
+    query
+    |> add_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
   end
 end
