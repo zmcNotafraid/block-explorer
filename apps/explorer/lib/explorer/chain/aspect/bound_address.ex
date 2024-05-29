@@ -7,11 +7,7 @@ defmodule Explorer.Chain.Aspect.BoundAddress do
 
   import Ecto.Changeset
 
-  alias Ecto.Repo
-  alias Explorer.Chain.{Aspect, Hash}
-  alias Explorer.Chain.Aspect.Transaction
-
-  import Ecto.Query, only: [from: 2]
+  alias Explorer.Chain.{Aspect, Address, Hash}
 
   @typedoc """
   * `aspect` - the `t:Explorer.Chain.Aspect.t/0` .
@@ -57,16 +53,5 @@ defmodule Explorer.Chain.Aspect.BoundAddress do
     |> validate_required(@required_fields)
     |> foreign_key_constraint(:aspect_hash)
     |> unique_constraint([:bind_block_number, :bind_aspect_transaction_index])
-  end
-
-  def find_latest(aspect_hash, bound_address_hash) do
-    from(ba in __MODULE__,
-      where:
-        ba.aspect_hash == ^aspect_hash and
-          ba.bound_address == ^bound_address_hash,
-      order_by: [desc: ba.bind_block_number, desc: ba.bind_aspect_transaction_index],
-      limit: 1
-    )
-    |> Repo.one()
   end
 end
