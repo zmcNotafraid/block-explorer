@@ -6,11 +6,9 @@ defmodule Explorer.Chain.Aspect do
   use Explorer.Schema
   import Explorer.Chain, only: [add_fetcher_limit: 2]
 
-  alias Ecto.Association.NotLoaded
-  alias Ecto.Changeset
   alias Explorer.Chain.{Aspect, Data, Hash}
-  alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Chain.Aspect.Version
+  alias Explorer.Repo
+  alias Explorer.Chain.Aspect.{BoundAddress, Version}
 
   @constant "0x0000000000000000000000000000000000a27e14"
 
@@ -77,8 +75,18 @@ defmodule Explorer.Chain.Aspect do
       when is_function(reducer, 2) do
     query =
       from(
-        bound_address in BoundAddress,
-        where: is_nil(bound_address.bind_transaction_hash)
+        bound_address1 in BoundAddress,
+        join: bound_address2 in BoundAddress,
+        on:
+          bound_address1.aspect_hash == bound_address2.aspect_hash and
+            bound_address1.bound_address_hash == bound_address2.bound_address_hash,
+        where:
+          is_nil(bound_address1.bind_aspect_transaction_hash) and
+            not is_nil(bound_address2.bind_aspect_transaction_hash) and
+            (is_nil(bound_address2.unbind_aspect_transaction_hash) or
+               (bound_address2.bind_block_number < bound_address1.unbind_block_number and
+                  bound_address2.unbind_block_number > bound_address1.unbind_block_number)),
+        select: bound_address1
       )
 
     query
