@@ -93,4 +93,20 @@ defmodule Explorer.Chain.Aspect do
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
+
+  def stream_unhandled_aspect_transaction(initial, reducer, limited? \\ false)
+      when is_function(reducer, 2) do
+    query =
+      from(
+        bound_address in BoundAddress,
+        where:
+          not is_nil(bound_address.bind_block_nubmer) and
+            bound_address.block_nubmer_checkpoint != bound_address.unbind_block_number,
+        order_by: [asc: :checkpoint_block_number]
+      )
+
+    query
+    |> add_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
+  end
 end

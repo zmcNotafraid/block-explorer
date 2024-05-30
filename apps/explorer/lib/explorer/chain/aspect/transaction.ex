@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Aspect.Transaction do
     field(:version, :integer)
     field(:block_number, :integer)
     field(:index, :integer)
-    field(:type, Ecto.Enum, values: [:bind, :unbind, :deploy, :upgrade, :change_version, :operation, :unknown])
+    field(:type, Ecto.Enum, values: [:bind, :unbind, :deploy, :upgrade, :change_version, :operation, :handle, :unknown])
 
     belongs_to(:aspect, Aspect, foreign_key: :aspect_hash, references: :hash, type: Hash.Address)
 
