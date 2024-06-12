@@ -29,7 +29,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Chain.Import.Runner.{TokenInstances, Tokens}
   alias Explorer.Prometheus.Instrumenter
-  alias Explorer.Repo, as: ExplorerRepo
   alias Explorer.Utility.MissingRangesManipulator
 
   @behaviour Runner
@@ -340,6 +339,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           size: fragment("EXCLUDED.size"),
           timestamp: fragment("EXCLUDED.timestamp"),
           total_difficulty: fragment("EXCLUDED.total_difficulty"),
+          refetch_needed: fragment("EXCLUDED.refetch_needed"),
           # Don't update `hash` as it is used for the conflict target
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", block.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", block.updated_at)
@@ -351,7 +351,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           fragment("EXCLUDED.miner_hash <> ?", block.miner_hash) or fragment("EXCLUDED.nonce <> ?", block.nonce) or
           fragment("EXCLUDED.number <> ?", block.number) or fragment("EXCLUDED.parent_hash <> ?", block.parent_hash) or
           fragment("EXCLUDED.size <> ?", block.size) or fragment("EXCLUDED.timestamp <> ?", block.timestamp) or
-          fragment("EXCLUDED.total_difficulty <> ?", block.total_difficulty)
+          fragment("EXCLUDED.total_difficulty <> ?", block.total_difficulty) or
+          fragment("EXCLUDED.refetch_needed <> ?", block.refetch_needed)
     )
   end
 
@@ -424,15 +425,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   rescue
     postgrex_error in Postgrex.Error ->
       {:error, %{exception: postgrex_error, consensus_block_numbers: consensus_block_numbers}}
-  end
-
-  def invalidate_consensus_blocks(block_numbers) do
-    opts = %{
-      timeout: 60_000,
-      timestamps: %{updated_at: DateTime.utc_now()}
-    }
-
-    lose_consensus(ExplorerRepo, [], block_numbers, [], opts)
   end
 
   defp new_pending_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
@@ -729,7 +721,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp refs_to_token_transfers_query(historical_token_transfers_query, filtered_query) do
-    if Application.get_env(:explorer, :chain_type) == "polygon_zkevm" do
+    if Application.get_env(:explorer, :chain_type) == :polygon_zkevm do
       from(historical_tt in subquery(historical_token_transfers_query),
         inner_join: tt in subquery(filtered_query),
         on:
@@ -770,7 +762,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp derived_token_transfers_query(refs_to_token_transfers, filtered_query) do
-    if Application.get_env(:explorer, :chain_type) == "polygon_zkevm" do
+    if Application.get_env(:explorer, :chain_type) == :polygon_zkevm do
       from(tt in filtered_query,
         inner_join: tt_1 in subquery(refs_to_token_transfers),
         on:

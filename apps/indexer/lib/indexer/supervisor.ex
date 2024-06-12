@@ -47,11 +47,13 @@ defmodule Indexer.Supervisor do
   }
 
   alias Indexer.Fetcher.Aspect.{UnbindAddress, Version}
+  alias Indexer.Fetcher.Arbitrum.RollupMessagesCatchup, as: ArbitrumRollupMessagesCatchup
+  alias Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses, as: ArbitrumTrackingBatchesStatuses
+  alias Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1, as: ArbitrumTrackingMessagesOnL1
   alias Indexer.Fetcher.ZkSync.BatchesStatusTracker, as: ZkSyncBatchesStatusTracker
   alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
 
   alias Indexer.Temporary.{
-    BlocksTransactionsMismatch,
     UncatalogedTokenTransfers,
     UnclesWithoutIndex
   }
@@ -148,6 +150,7 @@ defmodule Indexer.Supervisor do
           [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
         ),
         configure(Indexer.Fetcher.Optimism.OutputRoot.Supervisor, [[memory_monitor: memory_monitor]]),
+        configure(Indexer.Fetcher.Optimism.DisputeGame.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(Indexer.Fetcher.Optimism.Deposit.Supervisor, [[memory_monitor: memory_monitor]]),
         configure(
           Indexer.Fetcher.Optimism.Withdrawal.Supervisor,
@@ -180,6 +183,15 @@ defmodule Indexer.Supervisor do
         configure(Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),
+        configure(ArbitrumTrackingMessagesOnL1.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ArbitrumTrackingBatchesStatuses.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
+        configure(ArbitrumRollupMessagesCatchup.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
         {Indexer.Fetcher.Beacon.Blob.Supervisor, [[memory_monitor: memory_monitor]]},
 
         # Out-of-band fetchers
@@ -190,8 +202,6 @@ defmodule Indexer.Supervisor do
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},
         {UnclesWithoutIndex.Supervisor,
-         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-        {BlocksTransactionsMismatch.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]},
         {PendingBlockOperationsSanitizer, [[]]},
@@ -266,7 +276,7 @@ defmodule Indexer.Supervisor do
 
   defp add_chain_type_dependent_fetchers(fetchers) do
     case Application.get_env(:explorer, :chain_type) do
-      "stability" ->
+      :stability ->
         [{ValidatorStability, []} | fetchers]
 
       _ ->

@@ -26,6 +26,7 @@ defmodule Explorer.Chain.Address do
   }
 
   alias Explorer.Chain.Cache.{Accounts, NetVersion}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified gas_used transactions_count token_transfers_count)a
   @required_attrs ~w(hash)a
@@ -92,9 +93,11 @@ defmodule Explorer.Chain.Address do
     field(:gas_used, :integer)
     field(:ens_domain_name, :string, virtual: true)
     field(:metadata, :any, virtual: true)
+    field(:implementation, :any, virtual: true)
 
     has_one(:smart_contract, SmartContract, references: :hash)
     has_one(:token, Token, foreign_key: :contract_address_hash, references: :hash)
+    has_one(:proxy_implementations, Implementation, foreign_key: :proxy_address_hash, references: :hash)
 
     has_one(
       :contracts_creation_internal_transaction,
@@ -349,18 +352,24 @@ defmodule Explorer.Chain.Address do
   defp fetch_top_addresses(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    base_query =
-      from(a in Address,
-        where: a.fetched_coin_balance > ^0,
-        order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-        preload: [:names, :smart_contract],
-        select: {a, a.transactions_count}
-      )
+    case paging_options do
+      %PagingOptions{key: {0, _hash}} ->
+        []
 
-    base_query
-    |> page_addresses(paging_options)
-    |> limit(^paging_options.page_size)
-    |> Chain.select_repo(options).all()
+      _ ->
+        base_query =
+          from(a in Address,
+            where: a.fetched_coin_balance > ^0,
+            order_by: [desc: a.fetched_coin_balance, asc: a.hash],
+            preload: [:names, :smart_contract, :proxy_implementations],
+            select: {a, a.transactions_count}
+          )
+
+        base_query
+        |> page_addresses(paging_options)
+        |> limit(^paging_options.page_size)
+        |> Chain.select_repo(options).all()
+    end
   end
 
   defp page_addresses(query, %PagingOptions{key: nil}), do: query
