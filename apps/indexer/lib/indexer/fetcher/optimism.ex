@@ -24,7 +24,7 @@ defmodule Indexer.Fetcher.Optimism do
 
   @fetcher_name :optimism
   @block_check_interval_range_size 100
-  @eth_get_logs_range_size 1000
+  @eth_get_logs_range_size 250
   @finite_retries_number 3
 
   def child_spec(start_link_arguments) do
@@ -159,6 +159,7 @@ defmodule Indexer.Fetcher.Optimism do
           non_neg_integer()
         ) :: {:ok, list()} | {:error, term()}
   def get_logs(from_block, to_block, address, topic0, json_rpc_named_arguments, retries) do
+    # TODO: use the function from the Indexer.Helper module
     processed_from_block = if is_integer(from_block), do: integer_to_quantity(from_block), else: from_block
     processed_to_block = if is_integer(to_block), do: integer_to_quantity(to_block), else: to_block
 
@@ -261,7 +262,8 @@ defmodule Indexer.Fetcher.Optimism do
          block_check_interval: block_check_interval,
          start_block: start_block,
          end_block: last_safe_block,
-         json_rpc_named_arguments: json_rpc_named_arguments
+         json_rpc_named_arguments: json_rpc_named_arguments,
+         stop: false
        }}
     else
       {:start_block_l1_undefined, true} ->

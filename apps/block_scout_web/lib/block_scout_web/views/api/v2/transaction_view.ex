@@ -825,7 +825,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   case Application.compile_env(:explorer, :chain_type) do
-    "polygon_edge" ->
+    :polygon_edge ->
       defp chain_type_transformations(transactions) do
         transactions
       end
@@ -839,7 +839,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         end
       end
 
-    "polygon_zkevm" ->
+    :polygon_zkevm ->
       defp chain_type_transformations(transactions) do
         transactions
       end
@@ -853,7 +853,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         end
       end
 
-    "zksync" ->
+    :zksync ->
       defp chain_type_transformations(transactions) do
         transactions
       end
@@ -867,7 +867,21 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         end
       end
 
-    "optimism" ->
+    :arbitrum ->
+      defp chain_type_transformations(transactions) do
+        transactions
+      end
+
+      defp chain_type_fields(result, transaction, single_tx?, _conn, _watchlist_names) do
+        if single_tx? do
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+          BlockScoutWeb.API.V2.ArbitrumView.extend_transaction_json_response(result, transaction)
+        else
+          result
+        end
+      end
+
+    :optimism ->
       defp chain_type_transformations(transactions) do
         transactions
       end
@@ -881,7 +895,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         end
       end
 
-    "suave" ->
+    :suave ->
       defp chain_type_transformations(transactions) do
         transactions
       end
@@ -901,7 +915,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         end
       end
 
-    "stability" ->
+    :stability ->
       defp chain_type_transformations(transactions) do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         BlockScoutWeb.API.V2.StabilityView.transform_transactions(transactions)
@@ -912,7 +926,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         BlockScoutWeb.API.V2.StabilityView.extend_transaction_json_response(result, transaction)
       end
 
-    "ethereum" ->
+    :ethereum ->
       defp chain_type_transformations(transactions) do
         transactions
       end
