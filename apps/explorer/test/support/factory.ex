@@ -24,6 +24,8 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.Beacon.{Blob, BlobTransaction}
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
+  alias Explorer.Chain.Aspect.{Version, BoundAddress}
+  alias Explorer.Chain.Aspect.Transaction, as: AspectTransaction
 
   alias Explorer.Chain.{
     Address,
@@ -31,6 +33,7 @@ defmodule Explorer.Factory do
     Address.TokenBalance,
     Address.CoinBalance,
     Address.CoinBalanceDaily,
+    Aspect,
     Block,
     ContractMethod,
     Data,
@@ -1252,6 +1255,31 @@ defmodule Explorer.Factory do
     %ValidatorStability{
       address_hash: address.hash,
       state: Enum.random(0..2)
+    }
+  end
+
+  def aspect_factory do
+    %Aspect{
+      hash: address_hash(),
+      settlement_address_hash: address_hash(),
+      version: 1,
+      properties: nil,
+      code: %Data{bytes: <<1>>},
+      join_points: 2,
+      proof: "0x00"
+    }
+  end
+
+  def aspect_transaction_factory do
+    transaction = insert(:transaction) |> with_block()
+
+    %AspectTransaction{
+      hash: transaction |> Map.get(:hash),
+      version: 1,
+      block_number: transaction |> Map.get(:block_number),
+      index: transaction |> Map.get(:index),
+      type: :deploy,
+      aspect_hash: address_hash()
     }
   end
 end

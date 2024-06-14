@@ -4,11 +4,11 @@ defmodule Explorer.Chain.Aspect do
   """
 
   use Explorer.Schema
-  import Explorer.Chain, only: [add_fetcher_limit: 2]
+  import Explorer.Chain, only: [add_fetcher_limit: 2, select_repo: 1, join_associations: 2]
 
   alias Explorer.Chain.{Aspect, Data, Hash}
-  alias Explorer.Repo
-  alias Explorer.Chain.Aspect.{BoundAddress, Version}
+  alias Explorer.{Repo, Chain}
+  alias Explorer.Chain.Aspect.{BoundAddress, Version, Transaction}
 
   @constant "0x0000000000000000000000000000000000a27e14"
 
@@ -120,5 +120,14 @@ defmodule Explorer.Chain.Aspect do
       )
 
     Repo.aggregate(query, :count, :aspect_hash, timeout: :infinity)
+  end
+
+  def list_transactions(aspect_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    Transaction.list_transactions(aspect_hash)
+    |> Transaction.page_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
   end
 end

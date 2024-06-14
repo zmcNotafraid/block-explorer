@@ -7,11 +7,7 @@ defmodule Explorer.Chain.Aspect.Version do
 
   import Ecto.Changeset
 
-  alias Ecto.{Changeset, Repo}
   alias Explorer.Chain.{Aspect, Hash, Data}
-  alias Explorer.Chain.Aspect.Transaction
-
-  import Ecto.Query, only: [from: 2]
 
   @typedoc """
    * `aspect` - the `t:Explorer.Chain.Aspect.t/0` .

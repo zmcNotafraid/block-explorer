@@ -62,14 +62,14 @@ defmodule Explorer.Chain.Import.Runner.Aspects do
           {:ok, [Aspect.t()]}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    # on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     {:ok, _} =
       Import.insert_changes_list(
         repo,
         changes_list,
         conflict_target: [:hash],
-        on_conflict: :nothing,
+        on_conflict: on_conflict,
         for: Aspect,
         returning: true,
         timeout: timeout,
