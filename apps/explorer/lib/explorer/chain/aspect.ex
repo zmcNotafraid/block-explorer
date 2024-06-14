@@ -109,4 +109,16 @@ defmodule Explorer.Chain.Aspect do
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
+
+  @spec aspect_binding_count(Hash.Address.t()) :: non_neg_integer()
+  def aspect_binding_count(address_hash) do
+    query =
+      from(
+        bound_address in BoundAddress,
+        where: is_nil(bound_address.unbind_aspect_transaction_hash),
+        where: bound_address.bound_address_hash == ^address_hash
+      )
+
+    Repo.aggregate(query, :count, :aspect_hash, timeout: :infinity)
+  end
 end
