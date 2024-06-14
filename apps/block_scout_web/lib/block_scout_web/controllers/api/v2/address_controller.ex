@@ -96,8 +96,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   end
 
   def counters(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with {:ok, _address_hash, address} <- validate_address(address_hash_string, params) do
+    with {:ok, address_hash, address} <- validate_address(address_hash_string, params) do
       {validation_count} = Counters.address_counters(address, @api_true)
+      aspect_binding_count = Explorer.Chain.Aspect.aspect_binding_count(address_hash)
 
       transactions_from_db = address.transactions_count || 0
       token_transfers_from_db = address.token_transfers_count || 0
@@ -107,7 +108,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         transactions_count: to_string(transactions_from_db),
         token_transfers_count: to_string(token_transfers_from_db),
         gas_usage_count: to_string(address_gas_usage_from_db),
-        validations_count: to_string(validation_count)
+        validations_count: to_string(validation_count),
+        aspect_binding_count: to_string(aspect_binding_count)
       })
     end
   end
