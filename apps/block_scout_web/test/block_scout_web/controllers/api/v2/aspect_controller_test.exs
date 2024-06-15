@@ -2,8 +2,11 @@ defmodule BlockScoutWeb.API.V2.AspectControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain.Aspect.Transaction, as: AspectTransaction
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.Aspect.Version, as: AspectVersion
+  alias Explorer.Chain.{Aspect, Transaction}
   alias Explorer.Repo
+
+  require IEx
 
   describe "/aspect/:aspect_hash/transactions" do
     test "empty lists", %{conn: conn} do
@@ -15,7 +18,7 @@ defmodule BlockScoutWeb.API.V2.AspectControllerTest do
 
     test "non empty list", %{conn: conn} do
       aspect = insert(:aspect)
-      aspect_transaction = insert(:aspect_transaction, aspect_hash: aspect.hash)
+      insert(:aspect_transaction, aspect_hash: aspect.hash)
 
       request = get(conn, "/api/v2/aspects/#{to_string(aspect.hash)}/transactions")
 
@@ -45,6 +48,45 @@ defmodule BlockScoutWeb.API.V2.AspectControllerTest do
 
       check_paginated_response(response, response_2nd_page, txs)
     end
+  end
+
+  describe "/aspect/:aspect_hash" do
+    test "not found", %{conn: conn} do
+      request = get(conn, "/api/v2/aspects/0x8f65985c1f158bff33441366ea41dd9291d9e348")
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "returns aspect with version", %{conn: conn} do
+      aspect = insert(:aspect, version: 1)
+      versions = insert_list(2, :aspect_version, aspect_hash: aspect.hash)
+      insert(:aspect_bound_address, aspect_hash: aspect.hash)
+
+      request = get(conn, "/api/v2/aspects/#{aspect.hash}")
+      aspect_hash = to_string(aspect.hash)
+      response = json_response(request, 200)
+      deployed_tx = versions |> List.last() |> Map.get(:aspect_transaction_hash) |> to_string()
+
+      IEx.pry()
+      compare_item(versions |> List.last(), response["versions"] |> List.last())
+      compare_item(versions |> List.first(), response["versions"] |> List.first())
+
+      assert %{
+               "bound_address_count" => 1,
+               "deployed_tx" => ^deployed_tx,
+               "hash" => ^aspect_hash,
+               "join_points" => ["pre_tx_execute"],
+               "properties" => nil
+             } = response
+    end
+  end
+
+  defp compare_item(%AspectVersion{} = version, json) do
+    assert to_string(version.aspect_transaction_hash) == json["aspect_transaction_hash"]
+    assert version.block_number == json["block_number"]
+    assert version.aspect_transaction_index == json["aspect_transaction_index"]
+    assert Aspect.decode_join_points(version.join_points) == json["join_points"]
+    assert version.properties == json["properties"]
+    assert version.version == json["version"]
   end
 
   defp compare_item(%AspectTransaction{hash: hash} = transaction, json) do

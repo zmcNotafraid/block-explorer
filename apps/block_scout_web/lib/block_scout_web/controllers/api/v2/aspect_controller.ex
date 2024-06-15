@@ -7,6 +7,18 @@ defmodule BlockScoutWeb.API.V2.AspectController do
   import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
 
   alias Explorer.Chain.Aspect
+  alias Explorer.Chain
+
+  @aspect_options [
+    necessity_by_association: %{
+      :versions => :optional
+    },
+    api?: true
+  ]
+
+  @api_true [api?: true]
+
+  action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   def transactions(conn, %{"aspect_hash" => aspect_hash} = params) do
     full_options = paging_options(params)
@@ -22,5 +34,20 @@ defmodule BlockScoutWeb.API.V2.AspectController do
       transactions: transactions,
       next_page_params: next_page_params
     })
+  end
+
+  def aspect(conn, %{"aspect_hash_param" => aspect_hash_string} = params) do
+    with {:ok, _aspect_hash, aspect} <- validate_aspect(aspect_hash_string, params, @aspect_options) do
+      conn
+      |> put_status(200)
+      |> render(:aspect, %{aspect: aspect})
+    end
+  end
+
+  def validate_aspect(aspect_hash_string, params, options \\ @api_true) do
+    with {:format, {:ok, aspect_hash}} <- {:format, Chain.string_to_address_hash(aspect_hash_string)},
+         {:not_found, {:ok, aspect}} <- {:not_found, Aspect.hash_to_aspect(aspect_hash, options)} do
+      {:ok, aspect_hash, aspect}
+    end
   end
 end

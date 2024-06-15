@@ -1262,11 +1262,29 @@ defmodule Explorer.Factory do
     %Aspect{
       hash: address_hash(),
       settlement_address_hash: address_hash(),
-      version: 1,
+      version: sequence(:version, & &1),
       properties: nil,
       code: %Data{bytes: <<1>>},
       join_points: 2,
       proof: "0x00"
+    }
+  end
+
+  def aspect_version_factory do
+    aspect = insert(:aspect)
+    transaction = insert(:aspect_transaction, aspect_hash: aspect.hash)
+
+    %Version{
+      aspect_hash: address_hash(),
+      settlement_address_hash: address_hash(),
+      version: sequence(:aspect_version, & &1),
+      properties: nil,
+      code: %Data{bytes: <<1>>},
+      join_points: 2,
+      proof: "0x00",
+      block_number: transaction |> Map.get(:block_number),
+      aspect_transaction_hash: transaction |> Map.get(:hash),
+      aspect_transaction_index: transaction |> Map.get(:index)
     }
   end
 
@@ -1280,6 +1298,20 @@ defmodule Explorer.Factory do
       index: transaction |> Map.get(:index),
       type: :deploy,
       aspect_hash: address_hash()
+    }
+  end
+
+  def aspect_bound_address_factory do
+    aspect = insert(:aspect)
+    address = insert(:address)
+    transaction = insert(:aspect_transaction, aspect_hash: aspect.hash)
+
+    %BoundAddress{
+      aspect_hash: aspect.hash,
+      bound_address_hash: address.hash,
+      bind_aspect_transaction_hash: transaction |> Map.get(:hash),
+      bind_block_number: transaction |> Map.get(:block_number),
+      bind_aspect_transaction_index: transaction |> Map.get(:index)
     }
   end
 end
