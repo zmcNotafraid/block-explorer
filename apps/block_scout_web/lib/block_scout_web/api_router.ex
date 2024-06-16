@@ -98,6 +98,7 @@ defmodule BlockScoutWeb.ApiRouter do
 
     scope "/aspects" do
       get("/:aspect_hash/transactions", V2.AspectController, :transactions)
+      get("/:aspect_hash/bound_addresses", V2.AspectController, :bound_addresses)
       get("/:aspect_hash_param", V2.AspectController, :aspect)
     end
 

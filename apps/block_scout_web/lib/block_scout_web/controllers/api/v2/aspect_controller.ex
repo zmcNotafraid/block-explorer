@@ -36,6 +36,22 @@ defmodule BlockScoutWeb.API.V2.AspectController do
     })
   end
 
+  def bound_addresses(conn, %{"aspect_hash" => aspect_hash} = params) do
+    full_options = paging_options(params)
+
+    bound_addresses_plus_one = Aspect.list_bound_addresses(aspect_hash, full_options)
+    {bound_addresses, next_page} = split_list_by_page(bound_addresses_plus_one)
+
+    next_page_params = next_page |> next_page_params(bound_addresses, delete_parameters_from_next_page_params(params))
+
+    conn
+    |> put_status(200)
+    |> render(:bound_addresses, %{
+      bound_addresses: bound_addresses,
+      next_page_params: next_page_params
+    })
+  end
+
   def aspect(conn, %{"aspect_hash_param" => aspect_hash_string} = params) do
     with {:ok, _aspect_hash, aspect} <- validate_aspect(aspect_hash_string, params, @aspect_options) do
       conn

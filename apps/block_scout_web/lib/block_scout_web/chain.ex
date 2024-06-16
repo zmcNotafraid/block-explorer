@@ -666,6 +666,10 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number, "index" => index}
   end
 
+  defp paging_params(%{bind_block_number: block_number, bind_aspect_transaction_index: index}) do
+    %{"block_number" => block_number, "index" => index}
+  end
+
   defp paging_params(%TokenTransfer{block_number: block_number, log_index: index}) do
     %{"block_number" => block_number, "index" => index}
   end

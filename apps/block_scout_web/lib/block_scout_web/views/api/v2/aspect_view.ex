@@ -23,6 +23,21 @@ defmodule BlockScoutWeb.API.V2.AspectView do
     }
   end
 
+  def render("bound_addresses.json", %{bound_addresses: bound_addresses, next_page_params: next_page_params}) do
+    %{
+      "items" =>
+        bound_addresses
+        |> Enum.map(fn ba ->
+          ba
+          |> Map.merge(%{
+            is_smart_contract: is_smart_contract(ba.contract_code)
+          })
+          |> Map.delete(:cotract_code)
+        end),
+      "next_page_params" => next_page_params
+    }
+  end
+
   def render("aspect.json", %{aspect: aspect}) do
     prepare_aspect(aspect)
   end
@@ -63,4 +78,11 @@ defmodule BlockScoutWeb.API.V2.AspectView do
   end
 
   defp format_fee({type, value}), do: %{"type" => type, "value" => value}
+
+  defp is_smart_contract(contract_code) do
+    case contract_code do
+      nil -> false
+      _ -> true
+    end
+  end
 end
