@@ -21,6 +21,7 @@ defmodule Explorer.Chain.Search do
 
   alias Explorer.Chain.{
     Address,
+    Aspect,
     Beacon.Blob,
     Block,
     DenormalizationHelper,
@@ -88,6 +89,7 @@ defmodule Explorer.Chain.Search do
     labels_query = search_label_query(term)
     address_query = search_address_query(string)
     block_query = search_block_query(string)
+    aspect_query = search_aspect_query(string)
 
     basic_query =
       from(
@@ -100,6 +102,7 @@ defmodule Explorer.Chain.Search do
       address_query ->
         basic_query
         |> union(^address_query)
+        |> union(^aspect_query)
 
       valid_full_hash?(string) ->
         tx_query = search_tx_query(string)
@@ -131,6 +134,9 @@ defmodule Explorer.Chain.Search do
       block_query ->
         basic_query
         |> union(^block_query)
+
+      aspect_query ->
+        aspect_query
 
       true ->
         basic_query
@@ -221,6 +227,14 @@ defmodule Explorer.Chain.Search do
             []
           end
 
+        aspect_result =
+          if query = search_aspect_query(search_query) do
+            query
+            |> select_repo(options).all()
+          else
+            []
+          end
+
         blocks_result =
           if query = search_block_query(search_query) do
             query
@@ -241,6 +255,7 @@ defmodule Explorer.Chain.Search do
             op_result,
             blob_result,
             address_result,
+            aspect_result,
             blocks_result,
             ens_result
           ]
@@ -475,6 +490,25 @@ defmodule Explorer.Chain.Search do
     )
   end
 
+  defp search_aspect_query(term) do
+    case Chain.string_to_address_hash(term) do
+      {:ok, aspect_hash} ->
+        aspect_search_fields =
+          search_fields()
+          |> Map.put(:aspect_hash, dynamic([aspect], aspect.hash))
+          |> Map.put(:type, "aspect")
+          |> Map.put(:inserted_at, dynamic([aspect], aspect.inserted_at))
+
+        from(aspect in Aspect,
+          where: aspect.hash == ^aspect_hash,
+          select: ^aspect_search_fields
+        )
+
+      _ ->
+        nil
+    end
+  end
+
   defp search_block_query(term) do
     block_search_fields =
       search_fields()
@@ -647,6 +681,7 @@ defmodule Explorer.Chain.Search do
   defp search_fields do
     %{
       address_hash: dynamic([_], type(^nil, :binary)),
+      aspect_hash: dynamic([_], type(^nil, :binary)),
       tx_hash: dynamic([_], type(^nil, :binary)),
       user_operation_hash: dynamic([_], type(^nil, :binary)),
       blob_hash: dynamic([_], type(^nil, :binary)),
