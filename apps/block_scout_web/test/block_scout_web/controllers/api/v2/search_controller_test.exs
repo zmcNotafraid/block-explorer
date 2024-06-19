@@ -49,6 +49,21 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert item["timestamp"] == block.timestamp |> to_string() |> String.replace(" ", "T")
     end
 
+    test "search aspect", %{conn: conn} do
+      aspect = insert(:aspect)
+
+      request = get(conn, "/api/v2/search?q=#{aspect.hash}")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      item = Enum.at(response["items"], 0)
+
+      assert item["type"] == "aspect"
+      assert item["aspect_hash"] == to_string(aspect.hash)
+    end
+
     test "search reorg", %{conn: conn} do
       block = insert(:block, consensus: false)
 

@@ -96,6 +96,12 @@ defmodule BlockScoutWeb.ApiRouter do
   scope "/v2", as: :api_v2 do
     pipe_through(:api_v2)
 
+    scope "/aspects" do
+      get("/:aspect_hash/transactions", V2.AspectController, :transactions)
+      get("/:aspect_hash/bound_addresses", V2.AspectController, :bound_addresses)
+      get("/:aspect_hash_param", V2.AspectController, :aspect)
+    end
+
     scope "/search" do
       get("/", V2.SearchController, :search)
       get("/check-redirect", V2.SearchController, :check_redirect)

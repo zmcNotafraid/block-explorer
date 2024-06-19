@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Aspect.BoundAddress do
   import Ecto.Changeset
 
   alias Explorer.Chain.{Aspect, Address, Hash}
+  alias Explorer.PagingOptions
 
   @typedoc """
   * `aspect` - the `t:Explorer.Chain.Aspect.t/0` .
@@ -53,5 +54,46 @@ defmodule Explorer.Chain.Aspect.BoundAddress do
     |> validate_required(@required_fields)
     |> foreign_key_constraint(:aspect_hash)
     |> unique_constraint([:bind_block_number, :bind_aspect_transaction_index])
+  end
+
+  @spec list_bound_addresses(String.t()) :: Ecto.Query.t()
+  def list_bound_addresses(aspect_hash) do
+    from(ba in __MODULE__,
+      join: a in Address,
+      on: a.hash == ba.bound_address_hash,
+      where: ba.aspect_hash == ^aspect_hash,
+      where: is_nil(ba.unbind_aspect_transaction_hash),
+      select: %{
+        bound_address_hash: ba.bound_address_hash,
+        bind_aspect_transaction_hash: ba.bind_aspect_transaction_hash,
+        bind_aspect_transaction_index: ba.bind_aspect_transaction_index,
+        bind_block_number: ba.bind_block_number,
+        version: ba.version,
+        priority: ba.priority,
+        contract_code: a.contract_code
+      },
+      order_by: [desc: :bind_block_number, desc: :bind_aspect_transaction_index]
+    )
+  end
+
+  @spec page_bound_address(Ecto.Query.t() | atom, Explorer.PagingOptions.t()) :: Ecto.Query.t()
+  def page_bound_address(query, %PagingOptions{key: nil}), do: query
+
+  def page_bound_address(query, %PagingOptions{key: {block_number, index}, is_index_in_asc_order: true}) do
+    where(
+      query,
+      [bound_address],
+      bound_address.bind_block_number < ^block_number or
+        (bound_address.bind_block_number == ^block_number and bound_address.bind_aspect_transaction_index > ^index)
+    )
+  end
+
+  def page_bound_address(query, %PagingOptions{key: {block_number, index}}) do
+    where(
+      query,
+      [bound_address],
+      bound_address.bind_block_number < ^block_number or
+        (bound_address.bind_block_number == ^block_number and bound_address.bind_aspect_transaction_index < ^index)
+    )
   end
 end

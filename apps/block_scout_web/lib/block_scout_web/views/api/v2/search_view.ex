@@ -103,6 +103,17 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     }
   end
 
+  def prepare_search_result(%{type: "aspect"} = search_result) do
+    aspect_hash = hash_to_string(search_result.aspect_hash)
+
+    %{
+      "type" => search_result.type,
+      "aspect_hash" => aspect_hash,
+      "timestamp" => search_result.timestamp,
+      "priority" => search_result.priority
+    }
+  end
+
   def prepare_search_result(%{type: "user_operation"} = search_result) do
     user_operation_hash = hash_to_string(search_result.user_operation_hash)
 

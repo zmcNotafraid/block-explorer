@@ -3,8 +3,6 @@ defmodule Indexer.Transform.Aspects do
   Helper functions for transforming input data for aspect transactions.
   """
 
-  import Bitwise
-
   require Logger
 
   alias Explorer.Chain.Aspect
@@ -358,19 +356,6 @@ defmodule Indexer.Transform.Aspects do
           version: Enum.at(result, 2)
         }
     end
-  end
-
-  def decode_join_points(join_points) do
-    [
-      {"verify_tx", 1},
-      {"pre_tx_execute", 2},
-      {"pre_contract_call", 4},
-      {"post_contract_call", 8},
-      {"post_tx_execute", 16},
-      {"post_tx_commit", 32}
-    ]
-    |> Enum.filter(fn {_name, value} -> (join_points &&& value) != 0 end)
-    |> Enum.map(fn {name, _} -> name end)
   end
 
   defp parse_function_method(input) do

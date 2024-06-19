@@ -4,11 +4,13 @@ defmodule Explorer.Chain.Aspect do
   """
 
   use Explorer.Schema
-  import Explorer.Chain, only: [add_fetcher_limit: 2]
+
+  import Bitwise
+  import Explorer.Chain, only: [add_fetcher_limit: 2, select_repo: 1, join_associations: 2]
 
   alias Explorer.Chain.{Aspect, Data, Hash}
-  alias Explorer.Repo
-  alias Explorer.Chain.Aspect.{BoundAddress, Version}
+  alias Explorer.{Repo, Chain}
+  alias Explorer.Chain.Aspect.{BoundAddress, Version, Transaction}
 
   @constant "0x0000000000000000000000000000000000a27e14"
 
@@ -120,5 +122,73 @@ defmodule Explorer.Chain.Aspect do
       )
 
     Repo.aggregate(query, :count, :aspect_hash, timeout: :infinity)
+  end
+
+  def list_transactions(aspect_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    Transaction.list_transactions(aspect_hash)
+    |> Transaction.page_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  def list_bound_addresses(aspect_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+
+    BoundAddress.list_bound_addresses(aspect_hash)
+    |> BoundAddress.page_bound_address(paging_options)
+    |> limit(^paging_options.page_size)
+    |> select_repo(options).all()
+  end
+
+  def hash_to_aspect(
+        hash,
+        options \\ [
+          necessity_by_association: %{
+            :versions => :optional
+          }
+        ]
+      ) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    query =
+      from(
+        aspect in Aspect,
+        where: aspect.hash == ^hash
+      )
+
+    query
+    |> join_associations(necessity_by_association)
+    |> select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      aspect -> {:ok, aspect}
+    end
+  end
+
+  @spec address_binding_count(Hash.Address.t()) :: non_neg_integer()
+  def address_binding_count(aspect_hash) do
+    query =
+      from(
+        bound_address in BoundAddress,
+        where: is_nil(bound_address.unbind_aspect_transaction_hash),
+        where: bound_address.aspect_hash == ^aspect_hash
+      )
+
+    Repo.aggregate(query, :count, :bound_address_hash, timeout: :infinity)
+  end
+
+  def decode_join_points(join_points) do
+    [
+      {"verify_tx", 1},
+      {"pre_tx_execute", 2},
+      {"pre_contract_call", 4},
+      {"post_contract_call", 8},
+      {"post_tx_execute", 16},
+      {"post_tx_commit", 32}
+    ]
+    |> Enum.filter(fn {_name, value} -> (join_points &&& value) != 0 end)
+    |> Enum.map(fn {name, _} -> name end)
   end
 end
