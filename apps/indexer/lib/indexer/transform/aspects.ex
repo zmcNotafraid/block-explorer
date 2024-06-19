@@ -176,13 +176,13 @@ defmodule Indexer.Transform.Aspects do
     base_transaction_attrs = %{
       hash: params[:hash],
       block_number: params[:block_number],
-      index: params[:transaction_index]
+      index: params[:index]
     }
 
     base_version_attrs = %{
       aspect_transaction_hash: params[:hash],
       block_number: params[:block_number],
-      aspect_transaction_index: params[:transaction_index]
+      aspect_transaction_index: params[:index]
     }
 
     input = params[:input]
@@ -223,7 +223,7 @@ defmodule Indexer.Transform.Aspects do
               checkpoint_block_number: params[:block_number],
               bind_block_number: params[:block_number],
               bind_aspect_transaction_hash: params[:hash],
-              bind_aspect_transaction_index: params[:transaction_index]
+              bind_aspect_transaction_index: params[:index]
             })
             | aspect_bound_addresses
           ]
@@ -245,7 +245,7 @@ defmodule Indexer.Transform.Aspects do
             Map.merge(parsed_data, %{
               unbind_block_number: params[:block_number],
               unbind_aspect_transaction_hash: params[:hash],
-              unbind_aspect_transaction_index: params[:transaction_index]
+              unbind_aspect_transaction_index: params[:index]
             })
             | aspect_bound_addresses
           ]
