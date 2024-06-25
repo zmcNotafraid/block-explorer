@@ -155,12 +155,6 @@ defmodule Indexer.Transform.Addresses do
       [
         %{from: :l2_token_address, to: :hash}
       ]
-    ],
-    aspect_bound_addresses: [
-      [
-        %{from: :bind_block_number, to: :fetched_coin_balance_block_number},
-        %{from: :bound_address_hash, to: :hash}
-      ]
     ]
   }
 
