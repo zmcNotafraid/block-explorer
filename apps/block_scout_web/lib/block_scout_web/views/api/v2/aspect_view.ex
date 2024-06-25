@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.V2.AspectView do
 
   alias BlockScoutWeb.API.V2.ApiView
 
+  alias Explorer.Chain
   alias Explorer.Chain.{Aspect, Transaction}
 
   def render("message.json", assigns) do
@@ -16,7 +17,11 @@ defmodule BlockScoutWeb.API.V2.AspectView do
         |> Enum.map(fn tx ->
           tx
           |> Map.merge(%{
-            fee: %Transaction{gas_price: tx.gas_price, gas_used: tx.gas_used} |> Transaction.fee(:wei) |> format_fee()
+            fee: %Transaction{gas_price: tx.gas_price, gas_used: tx.gas_used} |> Transaction.fee(:wei) |> format_fee(),
+            result:
+              %Transaction{status: tx.status, block_hash: tx.block_hash, error: tx.error}
+              |> Chain.transaction_to_status()
+              |> format_status()
           })
         end),
       "next_page_params" => next_page_params
@@ -78,6 +83,9 @@ defmodule BlockScoutWeb.API.V2.AspectView do
   end
 
   defp format_fee({type, value}), do: %{"type" => type, "value" => value}
+
+  defp format_status({:error, reason}), do: reason
+  defp format_status(status), do: status
 
   defp is_smart_contract(contract_code) do
     case contract_code do
