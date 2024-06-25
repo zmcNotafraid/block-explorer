@@ -6,7 +6,6 @@ defmodule Explorer.Chain.Aspect.Transaction do
   use Explorer.Schema
 
   import Ecto.Changeset
-  import Explorer.Chain.Transaction, only: [fee: 2]
 
   alias Explorer.Chain.{Aspect, Hash}
   alias Explorer.PagingOptions
@@ -57,7 +56,10 @@ defmodule Explorer.Chain.Aspect.Transaction do
         to_address_hash: ct.to_address_hash,
         value: ct.value,
         gas_price: ct.gas_price,
-        gas_used: ct.gas_used
+        gas_used: ct.gas_used,
+        status: ct.status,
+        block_hash: ct.block_hash,
+        error: ct.error
       },
       order_by: [desc: :block_number, desc: :index]
     )

@@ -135,6 +135,7 @@ defmodule BlockScoutWeb.API.V2.AspectControllerTest do
     assert to_string(tx.value.value) == json["value"]
     assert to_string(tx.from_address_hash) == json["from_address_hash"]
     assert to_string(tx.to_address_hash) == json["to_address_hash"]
+    assert to_string(tx.status) == json["status"]
   end
 
   defp compare_item(%BoundAddress{aspect_hash: aspect_hash} = bound_address, json) do
